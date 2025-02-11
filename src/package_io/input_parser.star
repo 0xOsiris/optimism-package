@@ -7,6 +7,7 @@ sanity_check = import_module("./sanity_check.star")
 DEFAULT_EL_IMAGES = {
     "op-geth": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:latest",
     "op-reth": "ghcr.io/paradigmxyz/op-reth:latest",
+    "world-chain-builder": "world-chain-builder:latest",
     "op-erigon": "testinprod/op-erigon:latest",
     "op-nethermind": "nethermind/nethermind:latest",
     "op-besu": "ghcr.io/optimism-java/op-besu:latest",
@@ -15,6 +16,10 @@ DEFAULT_EL_IMAGES = {
 DEFAULT_CL_IMAGES = {
     "op-node": "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:develop",
     "hildr": "ghcr.io/optimism-java/hildr:latest",
+}
+
+DEFAULT_BUNDLER_IMAGES = {
+    "rundler": "leytont/rundler:latest",
 }
 
 DEFAULT_BATCHER_IMAGES = {

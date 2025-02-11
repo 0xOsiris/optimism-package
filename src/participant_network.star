@@ -6,6 +6,8 @@ op_challenger_launcher = import_module(
     "./challenger/op-challenger/op_challenger_launcher.star"
 )
 op_proposer_launcher = import_module("./proposer/op-proposer/op_proposer_launcher.star")
+rundler_launcher = import_module("./bundler/rundler/rundler_launcher.star")
+
 util = import_module("./util.star")
 
 
@@ -30,6 +32,9 @@ def launch_participant_network(
     observability_helper,
     interop_params,
     da_server_context,
+    entrypoint_config_file,
+    mempool_config_file,
+    chain_spec,
 ):
     num_participants = len(participants)
     # First EL and sequencer CL
@@ -121,6 +126,16 @@ def launch_participant_network(
         game_factory_address,
         proposer_params,
         observability_helper,
+    )
+
+    rundler_launcher.launch(
+        plan,
+        "rundler{0}".format(l2_services_suffix),
+        input_parser.DEFAULT_BUNDLER_IMAGES["rundler"],
+        all_el_contexts[0],
+        entrypoint_config_file,
+        mempool_config_file,
+        chain_spec,
     )
 
     return struct(
