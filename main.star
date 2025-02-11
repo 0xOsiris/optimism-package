@@ -17,6 +17,7 @@ input_parser = import_module("./src/package_io/input_parser.star")
 ethereum_package_static_files = import_module(
     "github.com/ethpandaops/ethereum-package/src/static_files/static_files.star"
 )
+rundler_static = import_module("./src/static/static_files.star")
 
 
 def run(plan, args):
@@ -106,6 +107,21 @@ def run(plan, args):
         name="op_jwt_file",
     )
 
+    entrypoint_config_file = plan.upload_files(
+        src=rundler_static.ENTRYPOINT_CONFIG_FILE_PATH,
+        name="entrypoint_config.json",
+    )
+
+    mempool_config_file = plan.upload_files(
+        src=rundler_static.MEMPOOL_CONFIG_FILE_PATH,
+        name="mempool_config.json",
+    )
+
+    rundler_chain_spec = plan.upload_files(
+        src=rundler_static.RUNDLER_CHAIN_SPEC_FILE_PATH,
+        name="chain_spec.json",
+    )
+
     l2s = []
     for l2_num, chain in enumerate(optimism_args_with_right_defaults.chains):
         l2s.append(
@@ -125,6 +141,9 @@ def run(plan, args):
                 persistent,
                 observability_helper,
                 interop_params,
+                entrypoint_config_file,
+                mempool_config_file,
+                rundler_chain_spec,
             )
         )
 
