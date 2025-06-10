@@ -403,13 +403,12 @@ def launch(
                     )
 
             sidecar_context = sidecar_launch_method(
-                plan,
-                sidecar_launcher,
-                sidecar_service_name,
-                mev_params.image or registry.get(_registry.ROLLUP_BOOST),
-                all_el_contexts,
-                el_context,
-                el_builder_context,
+                plan=plan,
+                params=mev_params,
+                network_params=network_params,
+                sequencer_context=el_context,
+                builder_context=el_builder_context,
+                jwt_file=jwt_file,
             )
 
             all_el_contexts.append(el_builder_context)
