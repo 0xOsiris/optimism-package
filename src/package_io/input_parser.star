@@ -2,13 +2,26 @@ ethereum_package_input_parser = import_module(
     "github.com/ethpandaops/ethereum-package/src/package_io/input_parser.star"
 )
 
+_ethereum_package_shared_utils = import_module(
+    "github.com/ethpandaops/ethereum-package/src/shared_utils/shared_utils.star"
+)
+
+_batcher_input_parser = import_module("/src/batcher/input_parser.star")
+_da_input_parser = import_module("/src/da/input_parser.star")
 _challenger_input_parser = import_module("/src/challenger/input_parser.star")
+_conductor_input_parser = import_module("/src/conductor/input_parser.star")
+_mev_input_parser = import_module("/src/mev/input_parser.star")
 _superchain_input_parser = import_module("/src/superchain/input_parser.star")
+_proposer_input_parser = import_module("/src/proposer/input_parser.star")
+_proxyd_input_parser = import_module("/src/proxyd/input_parser.star")
 _supervisor_input_parser = import_module("/src/supervisor/input_parser.star")
+_tx_fuzzer_parser = import_module("/src/tx-fuzzer/input_parser.star")
 
 constants = import_module("../package_io/constants.star")
 sanity_check = import_module("./sanity_check.star")
 _registry = import_module("./registry.star")
+
+_net = import_module("/src/util/net.star")
 
 
 DEFAULT_DA_SERVER_PARAMS = {
@@ -181,37 +194,14 @@ def input_parser(
                     interop_time_offset=result["network_params"]["interop_time_offset"],
                     fund_dev_accounts=result["network_params"]["fund_dev_accounts"],
                 ),
-                proxyd_params=struct(
-                    image=result["proxyd_params"]["image"],
-                    extra_params=result["proxyd_params"]["extra_params"],
-                ),
-                batcher_params=struct(
-                    image=result["batcher_params"]["image"],
-                    extra_params=result["batcher_params"]["extra_params"],
-                ),
-                proposer_params=struct(
-                    image=result["proposer_params"]["image"],
-                    extra_params=result["proposer_params"]["extra_params"],
-                    game_type=result["proposer_params"]["game_type"],
-                    proposal_interval=result["proposer_params"]["proposal_interval"],
-                ),
-                mev_params=struct(
-                    rollup_boost_image=result["mev_params"]["rollup_boost_image"],
-                    builder_host=result["mev_params"]["builder_host"],
-                    builder_port=result["mev_params"]["builder_port"],
-                ),
-                da_server_params=struct(
-                    enabled=result["da_server_params"]["enabled"],
-                    image=result["da_server_params"]["image"],
-                    cmd=result["da_server_params"]["cmd"],
-                ),
+                proxyd_params=result["proxyd_params"],
+                batcher_params=result["batcher_params"],
+                proposer_params=result["proposer_params"],
+                mev_params=result["mev_params"],
+                conductor_params=result["conductor_params"],
+                da_params=result["da_params"],
+                tx_fuzzer_params=result["tx_fuzzer_params"],
                 additional_services=result["additional_services"],
-                tx_fuzzer_params=struct(
-                    image=result["tx_fuzzer_params"]["image"],
-                    tx_fuzzer_extra_args=result["tx_fuzzer_params"][
-                        "tx_fuzzer_extra_args"
-                    ],
-                ),
             )
             for result in results["chains"]
         ],
@@ -281,22 +271,60 @@ def parse_network_params(plan, registry, input_args):
         network_params = default_network_params()
         network_params.update(chain.get("network_params", {}))
 
-        proxyd_params = _default_proxyd_params(registry)
-        proxyd_params.update(chain.get("proxyd_params", {}))
-
-        batcher_params = _default_batcher_params(registry)
-        batcher_params.update(chain.get("batcher_params", {}))
-
-        proposer_params = _default_proposer_params(registry)
-        proposer_params.update(chain.get("proposer_params", {}))
-
-        mev_params = default_mev_params()
-        mev_params.update(chain.get("mev_params", {}))
-        da_server_params = default_da_server_params(registry)
-        da_server_params.update(chain.get("da_server_params", {}))
-
         network_name = network_params["name"]
         network_id = network_params["network_id"]
+
+        batcher_params = _batcher_input_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            chain.get("batcher_params", {}),
+            struct(**network_params),
+            registry,
+        )
+
+        proposer_params = _proposer_input_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            chain.get("proposer_params", {}),
+            struct(**network_params),
+            registry,
+        )
+
+        # FIXME MEV configuration will move under a participant configuration with multiple sequencers functionality
+        # and will require participant params (of the sequencer) to be passed in
+        mev_params = _mev_input_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            mev_args=chain.get("mev_params", {}),
+            network_params=struct(**network_params),
+            # FIXME At the moment the "name" of the sequencer is just its index in the array
+            # so we pass 0 as the name
+            participant_name="0",
+            registry=registry,
+        )
+
+        # FIXME Conductor configuration will move under a participant configuration with multiple sequencers functionality
+        # and will require participant params (of the sequencer) to be passed in
+        conductor_params = _conductor_input_parser.parse(
+            conductor_args=chain.get("conductor_params", {}),
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            network_params=struct(**network_params),
+            # FIXME At the moment the "name" of the sequencer is just its index in the array
+            # so we pass 0 as the name
+            participant_name="0",
+            registry=registry,
+        )
+
+        da_params = _da_input_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            chain.get("da_params", {}),
+            struct(**network_params),
+            registry,
+        )
+
+        tx_fuzzer_params = _tx_fuzzer_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            chain.get("tx_fuzzer_params", {}),
+            struct(**network_params),
+            registry,
+        )
 
         if network_name in seen_names:
             fail("Network name {0} is duplicated".format(network_name))
@@ -363,8 +391,34 @@ def parse_network_params(plan, registry, input_args):
                 )
                 participants.append(participant_copy)
 
-        tx_fuzzer_params = default_tx_fuzzer_params(registry)
-        tx_fuzzer_params.update(chain.get("tx_fuzzer_params", {}))
+        proxyd_params = _proxyd_input_parser.parse(
+            # FIXME The network_params will come from the new L2 parser once that's in. Until then they need to be converted to a struct
+            proxyd_args=chain.get("proxyd_params", {}),
+            network_params=struct(**network_params),
+            # FIXME The participants params will come from the new L2 parser once that's in. Until then we need to convert the old ones to the new format
+            participants_params=[
+                struct(
+                    # Name is something we don't have in the legacy params, we only have array indices
+                    name=str(index),
+                    el=struct(
+                        service_name="op-el-{0}-{1}-{2}-{3}-{4}".format(
+                            network_id,
+                            _ethereum_package_shared_utils.zfill_custom(
+                                index + 1, len(str(len(participants)))
+                            ),
+                            p["el_type"],
+                            p["cl_type"],
+                            network_name,
+                        ),
+                        ports={
+                            _net.RPC_PORT_NAME: _net.port(number=8545),
+                        },
+                    ),
+                )
+                for index, p in enumerate(participants)
+            ],
+            registry=registry,
+        )
 
         result = {
             "participants": participants,
@@ -373,7 +427,8 @@ def parse_network_params(plan, registry, input_args):
             "batcher_params": batcher_params,
             "proposer_params": proposer_params,
             "mev_params": mev_params,
-            "da_server_params": da_server_params,
+            "conductor_params": conductor_params,
+            "da_params": da_params,
             "additional_services": chain.get(
                 "additional_services", DEFAULT_ADDITIONAL_SERVICES
             ),
@@ -457,7 +512,9 @@ def default_grafana_params(registry):
     return {
         "image": registry.get(_registry.GRAFANA),
         "dashboard_sources": [
-            "github.com/ethereum-optimism/grafana-dashboards-public/resources"
+            "github.com/ethereum-optimism/grafana-dashboards-public/resources",
+            "github.com/op-rs/kona/docker/recipes/kona-node/grafana",
+            "github.com/paradigmxyz/reth/etc/grafana",
         ],
         "min_cpu": 10,
         "max_cpu": 1000,
@@ -499,7 +556,8 @@ def default_altda_deploy_config():
 
 def default_mev_params():
     return {
-        "rollup_boost_image": "",
+        "image": "",
+        "type": "rollup-boost",
         "builder_host": "",
         "builder_port": "",
     }
@@ -514,7 +572,7 @@ def default_chains(registry):
             "batcher_params": _default_batcher_params(registry),
             "proposer_params": _default_proposer_params(registry),
             "mev_params": default_mev_params(),
-            "da_server_params": default_da_server_params(registry),
+            "da_params": default_da_server_params(registry),
             "additional_services": DEFAULT_ADDITIONAL_SERVICES,
             "tx_fuzzer_params": default_tx_fuzzer_params(registry),
         }
@@ -630,7 +688,7 @@ def default_ethereum_package_network_params():
         "participants": [
             {
                 "el_type": "geth",
-                "cl_type": "teku",
+                "cl_type": "lighthouse",
             }
         ],
         "network_params": {
@@ -655,12 +713,16 @@ def default_da_server_params(registry):
     return {
         "enabled": False,
         "image": registry.get(_registry.DA_SERVER),
-        "cmd": DEFAULT_DA_SERVER_PARAMS["cmd"],
     }
 
 
 def default_tx_fuzzer_params(registry):
     return {
+        "enabled": False,
         "image": registry.get(_registry.TX_FUZZER),
-        "tx_fuzzer_extra_args": [],
+        "extra_params": [],
+        "min_cpu": 100,
+        "max_cpu": 1000,
+        "min_memory": 20,
+        "max_memory": 300,
     }

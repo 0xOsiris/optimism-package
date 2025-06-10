@@ -38,12 +38,11 @@ optimism_package:
         fund_dev_accounts: true
       batcher_params:
         extra_params: []
-      mev_params:
-        builder_host: ""
-        builder_port: ""
-      additional_services: []
+      conductor_params:
+        enabled: True
+      additional_services: ["rollup-boost"]
       tx_fuzzer_params:
-        tx_fuzzer_extra_args: []
+        enabled: true
   op_contract_deployer_params:
     image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-deployer:v0.4.0-rc.2
     l1_artifacts_locator: https://storage.googleapis.com/oplabs-contract-artifacts/artifacts-v1-02024c5a26c16fc1a5c716fff1c46b5bf7f23890d431bb554ddbad60971211d4.tar.gz
@@ -68,7 +67,8 @@ optimism_package:
 ethereum_package:
   participants:
   - el_type: geth
-    cl_type: teku
+    cl_type: lighthouse
+    cl_image: "ethpandaops/lighthouse:stable-e21198c"
   network_params:
     preset: minimal
     genesis_delay: 5

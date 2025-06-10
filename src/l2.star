@@ -1,15 +1,14 @@
 participant_network = import_module("./participant_network.star")
 blockscout = import_module("./blockscout/blockscout_launcher.star")
-da_server_launcher = import_module("./alt-da/da-server/da_server_launcher.star")
+_da_server_launcher = import_module("./da/da-server/launcher.star")
+_tx_fuzzer_launcher = import_module("./tx-fuzzer/launcher.star")
 contract_deployer = import_module("./contracts/contract_deployer.star")
 input_parser = import_module("./package_io/input_parser.star")
 util = import_module("./util.star")
-tx_fuzzer = import_module("./transaction_fuzzer/transaction_fuzzer.star")
 
 
 def launch_l2(
     plan,
-    l2_num,
     l2_services_suffix,
     l2_args,
     jwt_file,
@@ -31,22 +30,22 @@ def launch_l2(
     batcher_params = l2_args.batcher_params
     proposer_params = l2_args.proposer_params
     mev_params = l2_args.mev_params
+    conductor_params = l2_args.conductor_params
     tx_fuzzer_params = l2_args.tx_fuzzer_params
 
     plan.print("Deploying L2 with name {0}".format(network_params.name))
 
     # we need to launch da-server before launching the participant network
     # because op-batcher and op-node(s) need to know the da-server url, if present
-    da_server_context = da_server_launcher.disabled_da_server_context()
-    if "da_server" in l2_args.additional_services:
-        da_server_image = l2_args.da_server_params.image
+    da_server_context = None
+    if l2_args.da_params:
         plan.print("Launching da-server")
-        da_server_context = da_server_launcher.launch_da_server(
-            plan,
-            "da-server-{0}".format(l2_services_suffix),
-            da_server_image,
-            l2_args.da_server_params.cmd,
-        )
+
+        da_server_context = _da_server_launcher.launch(
+            plan=plan,
+            params=l2_args.da_params,
+        ).context
+
         plan.print("Successfully launched da-server")
 
     l2 = participant_network.launch_participant_network(
@@ -58,9 +57,9 @@ def launch_l2(
         batcher_params=batcher_params,
         proposer_params=proposer_params,
         mev_params=mev_params,
+        conductor_params=conductor_params,
         deployment_output=deployment_output,
         l1_config_env_vars=l1_config,
-        l2_num=l2_num,
         l2_services_suffix=l2_services_suffix,
         global_log_level=global_log_level,
         global_node_selectors=global_node_selectors,
@@ -90,6 +89,18 @@ def launch_l2(
         ),
     )
 
+    if l2_args.tx_fuzzer_params:
+        plan.print("Launching transaction fuzzer")
+
+        _tx_fuzzer_launcher.launch(
+            plan=plan,
+            params=l2_args.tx_fuzzer_params,
+            el_context=all_el_contexts[0],
+            node_selectors=global_node_selectors,
+        )
+
+        plan.print("Successfully launched transaction fuzzer")
+
     for additional_service in l2_args.additional_services:
         if additional_service == "blockscout":
             plan.print("Launching op-blockscout")
@@ -103,20 +114,6 @@ def launch_l2(
                 network_params.network_id,
             )
             plan.print("Successfully launched op-blockscout")
-        elif additional_service == "tx_fuzzer":
-            plan.print("Launching transaction spammer")
-            fuzz_target = "http://{0}:{1}".format(
-                all_el_contexts[0].ip_addr,
-                all_el_contexts[0].rpc_port_num,
-            )
-            tx_fuzzer.launch(
-                plan,
-                "op-transaction-fuzzer-{0}".format(network_params.name),
-                fuzz_target,
-                tx_fuzzer_params,
-                global_node_selectors,
-            )
-            plan.print("Successfully launched transaction spammer")
 
     plan.print(l2.participants)
     plan.print(

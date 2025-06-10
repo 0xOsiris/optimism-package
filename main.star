@@ -1,8 +1,8 @@
-ethereum_package = import_module("github.com/ethpandaops/ethereum-package/main.star")
+_ethereum_package = import_module("github.com/ethpandaops/ethereum-package/main.star")
 contract_deployer = import_module("./src/contracts/contract_deployer.star")
 l2_launcher = import_module("./src/l2.star")
 superchain_launcher = import_module("./src/superchain/launcher.star")
-op_supervisor_launcher = import_module("./src/supervisor/op-supervisor/launcher.star")
+supervisor_launcher = import_module("./src/supervisor/launcher.star")
 op_challenger_launcher = import_module("./src/challenger/op-challenger/launcher.star")
 
 faucet = import_module("./src/faucet/op-faucet/op_faucet_launcher.star")
@@ -77,7 +77,7 @@ def run(plan, args={}, custom_launchers=None):
         wait_for_sync.wait_for_sync(plan, l1_config_env_vars)
     else:
         plan.print("Deploying a local L1")
-        l1 = ethereum_package.run(plan, ethereum_args)
+        l1 = _ethereum_package.run(plan, ethereum_args)
         plan.print(l1.network_params)
         # Get L1 info
         all_l1_participants = l1.all_participants
@@ -108,8 +108,19 @@ def run(plan, args={}, custom_launchers=None):
         name="op_jwt_file",
     )
 
+    # TODO We need to create the dependency sets before we launch the chains since
+    # e.g. op-node now depends on the artifacts to be present
+    #
+    # This can easily turn into another dependency cycle which means we might have to introduce yet another layer
+    # of execution whose sole purpose is to create required artifacts
+    for superchain_params in optimism_args.superchains:
+        superchain_launcher.launch(
+            plan=plan,
+            params=superchain_params,
+        )
+
     l2s = []
-    for l2_num, chain in enumerate(optimism_args.chains):
+    for chain in optimism_args.chains:
         # We filter out the supervisors applicable to this network
         l2_supervisors_params = [
             supervisor_params
@@ -121,7 +132,6 @@ def run(plan, args={}, custom_launchers=None):
         l2s.append(
             l2_launcher.launch_l2(
                 plan=plan,
-                l2_num=l2_num,
                 l2_services_suffix=chain.network_params.name,
                 l2_args=chain,
                 jwt_file=jwt_file,
@@ -140,19 +150,14 @@ def run(plan, args={}, custom_launchers=None):
             )
         )
 
-    for superchain_params in optimism_args.superchains:
-        superchain_launcher.launch(
-            plan=plan,
-            params=superchain_params,
-        )
-
     for supervisor_params in optimism_args.supervisors:
-        op_supervisor_launcher.launch(
+        supervisor_launcher.launch(
             plan=plan,
             params=supervisor_params,
             l1_config_env_vars=l1_config_env_vars,
             l2s=l2s,
             jwt_file=jwt_file,
+            deployment_output=deployment_output,
             observability_helper=observability_helper,
         )
 

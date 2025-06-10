@@ -122,6 +122,8 @@ optimism_package:
       dashboard_sources:
         # Default public Optimism dashboards
         - github.com/ethereum-optimism/grafana-dashboards-public/resources
+        - github.com/op-rs/kona/docker/recipes/kona-node/grafana
+        - github.com/paradigmxyz/reth/etc/grafana
       # Resource management for grafana container
       # CPU is milicores
       # RAM is in MB
@@ -171,8 +173,8 @@ optimism_package:
   # To setup an altda cluster, make sure to
   # 1. Set altda_deploy_config.use_altda to true (and da_commitment_type to KeccakCommitment, see TODO below)
   # 2. For each chain,
-  #    - Add "da_server" to the additional_services list if it should use alt-da
-  #    - For altda chains, set da_server_params to use an image and cmd of your choice (one could use da-server, another eigenda-proxy, another celestia proxy, etc). If unset, op's default da-server image will be used.
+  #    - Set da_params.enabled to true in your kurtosis argument file
+  #    - For altda chains, set da_params to use an image and cmd of your choice (one could use da-server, another eigenda-proxy, another celestia proxy, etc). If unset, op's default da-server image will be used.
   altda_deploy_config:
     use_altda: false
     # TODO: Is this field redundant? Afaiu setting it to GenericCommitment will not deploy the
@@ -259,7 +261,7 @@ optimism_package:
 
         # The Docker image that should be used for the CL client; leave blank to use the default for the client type
         # Defaults by client:
-        # - op-node: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:develop
+        # - op-node: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.13.3
         # - hildr: ghcr.io/optimism-java/hildr:latest
         cl_image: ""
 
@@ -332,7 +334,7 @@ optimism_package:
 
         # The Docker image that should be used for the builder CL client; leave blank to use the default for the client type
         # Defaults by client:
-        # - op-node: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:develop
+        # - op-node: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.13.3
         # - hildr: ghcr.io/optimism-java/hildr:latest
         cl_builder_image: ""
 
@@ -445,7 +447,10 @@ optimism_package:
       mev_params:
         # The Docker image that should be used for rollup boost; leave blank to use the default rollup-boost image
         # Defaults to "flashbots/rollup-boost:latest"
-        rollup_boost_image: ""
+        image: ""
+
+        # We currently only support rollup-boost, which is also the default value
+        type: "rollup-boost"
 
         # The host of an external builder
         builder_host: ""
@@ -463,7 +468,9 @@ optimism_package:
 
       # Configuration for da-server - https://specs.optimism.io/experimental/alt-da.html#da-server
       # TODO: each op-node and op-batcher should potentially have their own da-server, instead of sharing one like we currently do. For eg batcher needs to write via its da-server, whereas op-nodes don't.
-      da_server_params:
+      da_params:
+        # DA is disabled by default
+        enabled: false
         image: us-docker.pkg.dev/oplabs-tools-artifacts/images/da-server:latest
         # Command to pass to the container.
         # This is kept maximally generic to allow for any possible configuration, given that different

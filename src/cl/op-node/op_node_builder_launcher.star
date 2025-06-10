@@ -64,6 +64,7 @@ def launch(
     launcher,
     service_name,
     participant,
+    conductor_params,
     global_log_level,
     persistent,
     tolerations,
@@ -97,6 +98,7 @@ def launch(
         launcher=launcher,
         service_name=service_name,
         participant=participant,
+        conductor_params=conductor_params,
         log_level=log_level,
         persistent=persistent,
         tolerations=tolerations,
@@ -142,6 +144,7 @@ def get_beacon_config(
     launcher,
     service_name,
     participant,
+    conductor_params,
     log_level,
     persistent,
     tolerations,
@@ -184,8 +187,10 @@ def get_beacon_config(
         "--p2p.listen.tcp={0}".format(BEACON_DISCOVERY_PORT_NUM),
         "--p2p.listen.udp={0}".format(BEACON_DISCOVERY_PORT_NUM),
         "--safedb.path={0}".format(BEACON_DATA_DIRPATH_ON_SERVICE_CONTAINER),
-        "--altda.enabled=" + str(da_server_context.enabled),
-        "--altda.da-server=" + da_server_context.http_url,
+        "--altda.enabled={}".format("true" if da_server_context else "false"),
+        "--altda.da-server={}".format(
+            da_server_context.http_url if da_server_context else ""
+        ),
     ]
 
     # configure files
