@@ -406,7 +406,7 @@ def launch(
                 plan,
                 sidecar_launcher,
                 sidecar_service_name,
-                mev_params.rollup_boost_image or registry.get(_registry.ROLLUP_BOOST),
+                mev_params.image or registry.get(_registry.ROLLUP_BOOST),
                 all_el_contexts,
                 el_context,
                 el_builder_context,
