@@ -85,3 +85,17 @@ def get_service_config(
         private_ip_address_placeholder=_constants.PRIVATE_IP_ADDRESS_PLACEHOLDER,
         labels=params.labels,
     )
+
+
+def new_rollup_boost_launcher(
+    el_cl_genesis_data,
+    jwt_file,
+    network,
+    network_id,
+):
+    return struct(
+        el_cl_genesis_data=el_cl_genesis_data,
+        jwt_file=jwt_file,
+        network=network,
+        network_id=network_id,
+    )

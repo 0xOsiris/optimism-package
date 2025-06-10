@@ -201,7 +201,15 @@ def launch(
         }
 
     sidecar_launchers = {
-        "rollup-boost": {}
+        "rollup-boost": {
+            "launcher": _rollup_boost_launcher.new_rollup_boost_launcher(
+                deployment_output,
+                jwt_file,
+                network_params.network,
+                network_params.network_id,
+            ),
+            "launch_method": rollup_boost.launch,
+        }
     }
 
     if custom_launchers and "sidecar_launcher" in custom_launchers:
@@ -286,6 +294,11 @@ def launch(
         cl_builder_launcher, cl_builder_launch_method = (
             cl_builder_launchers[cl_builder_type]["launcher"],
             cl_builder_launchers[cl_builder_type]["launch_method"],
+        )
+
+        sidecar_launcher, sidecar_launch_method = (
+            sidecar_launchers[mev_params.type]["launcher"],
+            sidecar_launchers[mev_params.type]["launch_method"],
         )
 
         # Zero-pad the index using the calculated zfill value
@@ -389,14 +402,15 @@ def launch(
                         metrics_info,
                     )
 
-            sidecar_context = _launch_sidecar(
-                plan=plan,
-                params=mev_params,
-                network_params=network_params,
-                sequencer_context=el_context,
-                builder_context=el_builder_context,
-                jwt_file=jwt_file,
-            ).context
+            sidecar_context = sidecar_launch_method(
+                plan,
+                sidecar_launcher,
+                sidecar_service_name,
+                mev_params.rollup_boost_image or registry.get(_registry.ROLLUP_BOOST),
+                all_el_contexts,
+                el_context,
+                el_builder_context,
+            )
 
             all_el_contexts.append(el_builder_context)
         else:
