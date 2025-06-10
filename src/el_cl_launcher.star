@@ -208,7 +208,7 @@ def launch(
                 network_params.network,
                 network_params.network_id,
             ),
-            "launch_method": rollup_boost.launch,
+            "launch_method": _rollup_boost_launcher.launch,
         }
     }
 
