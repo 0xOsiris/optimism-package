@@ -481,72 +481,72 @@ def launch(
             )
 
         # We don't deploy CL for external builder
-        if rollup_boost_enabled and sequencer_enabled and not external_builder:
-            cl_builder_context = cl_builder_launch_method(
-                plan=plan,
-                launcher=cl_builder_launcher,
-                service_name=cl_builder_service_name,
-                participant=participant,
-                conductor_params=conductor_params,
-                global_log_level=global_log_level,
-                persistent=persistent,
-                tolerations=cl_tolerations,
-                node_selectors=node_selectors,
-                el_context=el_builder_context,
-                existing_cl_clients=all_cl_contexts,
-                l1_config_env_vars=l1_config_env_vars,
-                sequencer_enabled=False,
-                observability_helper=observability_helper,
-                supervisors_params=supervisors_params,
-                da_server_context=da_server_context,
-            )
-            for metrics_info in [
-                x for x in cl_builder_context.cl_nodes_metrics_info if x != None
-            ]:
-                observability.register_node_metrics_job(
-                    observability_helper,
-                    cl_builder_context.client_name,
-                    "beacon-builder",
-                    network_params.network,
-                    metrics_info,
-                    {
-                        "supernode": str(cl_builder_context.supernode),
-                    },
-                )
-            all_cl_contexts.append(cl_builder_context)
-        else:
-            cl_builder_context = cl_builder_launch_method(
-                plan=plan,
-                launcher=cl_builder_launcher,
-                service_name=cl_builder_service_name,
-                participant=participant,
-                conductor_params=conductor_params,
-                global_log_level=global_log_level,
-                persistent=persistent,
-                tolerations=cl_tolerations,
-                node_selectors=node_selectors,
-                el_context=el_builder_context,
-                existing_cl_clients=all_cl_contexts,
-                l1_config_env_vars=l1_config_env_vars,
-                sequencer_enabled=False,
-                observability_helper=observability_helper,
-                supervisors_params=supervisors_params,
-                da_server_context=da_server_context,
-            )
-            for metrics_info in [
-                x for x in cl_builder_context.cl_nodes_metrics_info if x != None
-            ]:
-                observability.register_node_metrics_job(
-                    observability_helper,
-                    cl_builder_context.client_name,
-                    "beacon-builder",
-                    network_params.network,
-                    metrics_info,
-                    {
-                        "supernode": str(cl_builder_context.supernode),
-                    },
-                )
-            all_cl_contexts.append(cl_builder_context)
+        # if rollup_boost_enabled and sequencer_enabled and not external_builder:
+        #     cl_builder_context = cl_builder_launch_method(
+        #         plan=plan,
+        #         launcher=cl_builder_launcher,
+        #         service_name=cl_builder_service_name,
+        #         participant=participant,
+        #         conductor_params=conductor_params,
+        #         global_log_level=global_log_level,
+        #         persistent=persistent,
+        #         tolerations=cl_tolerations,
+        #         node_selectors=node_selectors,
+        #         el_context=el_builder_context,
+        #         existing_cl_clients=all_cl_contexts,
+        #         l1_config_env_vars=l1_config_env_vars,
+        #         sequencer_enabled=False,
+        #         observability_helper=observability_helper,
+        #         supervisors_params=supervisors_params,
+        #         da_server_context=da_server_context,
+        #     )
+        #     for metrics_info in [
+        #         x for x in cl_builder_context.cl_nodes_metrics_info if x != None
+        #     ]:
+        #         observability.register_node_metrics_job(
+        #             observability_helper,
+        #             cl_builder_context.client_name,
+        #             "beacon-builder",
+        #             network_params.network,
+        #             metrics_info,
+        #             {
+        #                 "supernode": str(cl_builder_context.supernode),
+        #             },
+        #         )
+        #     all_cl_contexts.append(cl_builder_context)
+        # else:
+        #     cl_builder_context = cl_builder_launch_method(
+        #         plan=plan,
+        #         launcher=cl_builder_launcher,
+        #         service_name=cl_builder_service_name,
+        #         participant=participant,
+        #         conductor_params=conductor_params,
+        #         global_log_level=global_log_level,
+        #         persistent=persistent,
+        #         tolerations=cl_tolerations,
+        #         node_selectors=node_selectors,
+        #         el_context=el_builder_context,
+        #         existing_cl_clients=all_cl_contexts,
+        #         l1_config_env_vars=l1_config_env_vars,
+        #         sequencer_enabled=False,
+        #         observability_helper=observability_helper,
+        #         supervisors_params=supervisors_params,
+        #         da_server_context=da_server_context,
+        #     )
+        #     for metrics_info in [
+        #         x for x in cl_builder_context.cl_nodes_metrics_info if x != None
+        #     ]:
+        #         observability.register_node_metrics_job(
+        #             observability_helper,
+        #             cl_builder_context.client_name,
+        #             "beacon-builder",
+        #             network_params.network,
+        #             metrics_info,
+        #             {
+        #                 "supernode": str(cl_builder_context.supernode),
+        #             },
+        #         )
+        #     all_cl_contexts.append(cl_builder_context)
 
         # only the first participant is the sequencer
         if sequencer_enabled:
